@@ -216,6 +216,8 @@ class SdnPpoController(app_manager.RyuApp):
 
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
+        if eth.ethertype == 0x88cc:
+            return
         if eth is None:
             return
         src = eth.src
@@ -255,7 +257,7 @@ class SdnPpoController(app_manager.RyuApp):
             self.flood(dp, msg)
             return
         actions = [parser.OFPActionOutput(out_port)]
-        data = None if msg.buffer_id != ofp.OFPP_NO_BUFFER else msg.data
+        data = None if msg.buffer_id != ofp.OFP_NO_BUFFER else msg.data
         dp.send_msg(parser.OFPPacketOut(datapath=dp, buffer_id=msg.buffer_id, in_port=in_port, actions=actions, data=data))
 
     def flow_match(self, parser, ip4, pkt):
@@ -282,7 +284,7 @@ class SdnPpoController(app_manager.RyuApp):
         actions = [parser.OFPActionOutput(ofp.OFPP_FLOOD)]
         dp.send_msg(parser.OFPPacketOut(datapath=dp, buffer_id=msg.buffer_id,
                                        in_port=msg.match["in_port"], actions=actions,
-                                       data=None if msg.buffer_id != ofp.OFPP_NO_BUFFER else msg.data))
+                                       data=None if msg.buffer_id != ofp.OFP_NO_BUFFER else msg.data))
 
     def install_path(self, path: List[int], match, dst_port: int, metered_src_switch: Optional[int]):
         for idx, sw in enumerate(path):

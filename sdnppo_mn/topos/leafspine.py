@@ -3,8 +3,8 @@ from mininet.topo import Topo
 
 class LeafSpine(Topo):
     def build(self, bw=20, delay="1ms", spines=2, leaves=4, hosts_per_leaf=2):
-        sp = [self.addSwitch(f"s{i+1}") for i in range(spines)]
-        lf = [self.addSwitch(f"l{i+1}") for i in range(leaves)]
+        sp = [self.addSwitch(f"s{i+1}", dpid=f"{(i+1):016x}") for i in range(spines)]
+        lf = [self.addSwitch(f"l{i + 1}", dpid=f"{(0x100 + i + 1):016x}") for i in range(leaves)]
         for s in sp:
             for l in lf:
                 self.addLink(s, l, bw=bw, delay=delay)

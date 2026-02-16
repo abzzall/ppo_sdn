@@ -5,11 +5,11 @@ class FatTreeK4(Topo):
     def build(self, bw=20, delay="1ms"):
         k = 4
         pods = k
-        core = [self.addSwitch(f"c{i+1}") for i in range((k//2)**2)]
+        core = [self.addSwitch(f"c{i+1}", dpid=f"{(0x300+i+1):016x}") for i in range((k//2)**2)]
         agg, edge = [], []
         for p in range(pods):
-            agg_p = [self.addSwitch(f"a{p+1}{i+1}") for i in range(k//2)]
-            edge_p = [self.addSwitch(f"e{p+1}{i+1}") for i in range(k//2)]
+            agg_p = [self.addSwitch(f"a{p+1}{i+1}", dpid=f"{(0x400 + p*0x10 + i+1):016x}") for i in range(k//2)]
+            edge_p = [self.addSwitch(f"e{p+1}{i+1}", dpid=f"{(0x500 + p*0x10 + i+1):016x}") for i in range(k//2)]
             agg.append(agg_p); edge.append(edge_p)
             for a in agg_p:
                 for e in edge_p:
