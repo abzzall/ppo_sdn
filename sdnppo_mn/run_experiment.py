@@ -16,6 +16,8 @@ from .topos.wan import MiniWAN
 from .topos.fattree import FatTreeK4
 from .traffic import start_iperf_servers, run_traffic
 from . import policies
+from datetime import datetime, timezone
+from pathlib import Path
 
 def wait_for_ovs_controllers(net, timeout_s: float = 10.0, poll_s: float = 0.5) -> bool:
     """Best-effort: wait until all OVS bridges report controller is_connected=true."""
@@ -85,8 +87,7 @@ def main():
     ap.add_argument("--delay", default="1ms")
     ap.add_argument("--seed", type=int, default=1)
     args = ap.parse_args()
-
-    run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S") + f"_{args.topo}_{args.policy}_seed{args.seed}"
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S") + f"_{args.topo}_{args.policy}_seed{args.seed}"
     outdir = os.path.join("logs", run_id)
     os.makedirs(outdir, exist_ok=True)
     os.makedirs(os.path.join(outdir, "iperf3"), exist_ok=True)
@@ -218,8 +219,8 @@ def main():
 
     f_steps.close()
     f_state.close()
-
-    with open(flows_path, "w", newline="") as f:
+    os.makedirs(os.path.dirname(flows_path), exist_ok=True)
+    with flows_path.open("w", newline="") as f:
         wf = csv.writer(f)
         wf.writerow(["flow_id","src","dst","dst_ip","dst_port","proto","rate_mbps","duration_s","flow_type","start_ts"])
         for fs in flow_specs:
