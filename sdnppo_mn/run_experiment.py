@@ -102,6 +102,27 @@ def main():
     )
     net.addController(RemoteController("c0", ip=args.controller_ip, port=args.of_port))
     net.start()
+    for sw in net.switches:
+        sw.cmd(f"ovs-vsctl set bridge {sw.name} protocols=OpenFlow13")
+        # Force reconnect (important if the initial handshake happened before protocols were restricted)
+        sw.cmd(f"ovs-vsctl del-controller {sw.name}")
+        sw.cmd(f"ovs-vsctl set-controller {sw.name} tcp:{args.controller_ip}:{args.of_port}")
+
+    time.sleep(1.0)
+    if not wait_for_ovs_controllers(net, timeout_s=10.0, poll_s=0.5):
+        print("[error] OVS->controller connection failed; aborting run (check SDNPPO_OF_PORT / controller process).")
+        for sw in net.switches:
+            tgt = sw.cmd(f"ovs-vsctl get Controller {sw.name} target").strip()
+            isc = sw.cmd(f"ovs-vsctl get Controller {sw.name} is_connected").strip()
+            print(f"  {sw.name}: target={tgt} is_connected={isc}")
+        net.stop()
+        raise SystemExit(2)
+
+    loss = net.pingAll(timeout=1)
+    if loss > 0:
+        print(f"[error] pingAll loss={loss}% at startup; aborting.")
+        net.stop()
+        raise SystemExit(3)
 
     for sw in net.switches:
         sw.cmd("ovs-vsctl set bridge %s protocols=OpenFlow13" % sw.name)
